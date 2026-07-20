@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Équipe de France 2026 — Encore ou Stop ?</title>
+<style>
+  /* ============================================================
+     ÉQUIPE DE FRANCE 2026 — Outil drag & drop
+     Couleurs Équipe de France : bleu / blanc / rouge
+     ============================================================ */
+  :root{
+    --om-blue:#2743A0;
+    --om-blue-deep:#17296B;
+    --om-navy:#0E1636;
+    --om-gold:#2743A0;
+    --keep:#2BD17E;
+    --keep-deep:#13965a;
+    --sell:#FF5A6E;
+    --sell-deep:#cc2f43;
+    --cost:#E58A00;
+    --cost-deep:#9a5a00;
+    --loan-bg:#FFE7C2;
+    --exp-bg:#E9D9FF;
+    --exp-ink:#6b2fb3;
+    --bg:#0d1b2a;
+    --card:#ffffff;
+    --ink:#0E1636;
+    --muted:#5b7088;
+    --radius:16px;
+    --shadow:0 8px 22px rgba(6,22,40,.16);
+    --shadow-lg:0 24px 60px rgba(6,22,40,.35);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1100px 520px at 12% -8%, rgba(39,67,160,.08), transparent 60%),
+      radial-gradient(900px 460px at 112% 4%, rgba(230,57,70,.06), transparent 55%),
+      #ffffff;
+    min-height:100vh;
+    padding:18px;
+  }
+  .wrap{max-width:920px;margin:0 auto;}
+
+  /* ---------- Header ---------- */
+  header.app-head{display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap;}
+  .logo{
+    width:54px;height:54px;border-radius:13px;flex:0 0 auto;
+    background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);overflow:hidden;
+  }
+  .logo img{width:42px;height:42px;object-fit:contain;}
+  .head-txt h1{margin:0;color:var(--om-navy);font-size:clamp(19px,3.2vw,28px);font-weight:800;letter-spacing:-.02em;line-height:1.05;}
+  .head-txt h1 span{color:var(--om-blue-deep);}
+  .head-txt p{margin:4px 0 0;color:var(--muted);font-size:13.5px;}
+
+  /* ---------- Summary bar ---------- */
+  .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px;margin-bottom:14px;}
+  .stat{background:#f3f7fb;border:1px solid #e4edf5;border-radius:11px;padding:8px 11px;}
+  .stat .k{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;}
+  .stat .v{font-size:clamp(15px,2.1vw,18px);font-weight:800;margin-top:2px;color:var(--om-navy);}
+  .stat.sell .v{color:var(--sell-deep);}
+  .stat.keep .v{color:var(--keep-deep);}
+  .stat.costc .v{color:var(--cost-deep);}
+  .stat .v small{font-size:12px;font-weight:600;color:var(--muted);}
+
+  /* ---------- Pool ---------- */
+  .panel-title{color:var(--om-navy);font-weight:700;font-size:15px;margin:0 0 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .panel-title .pill{background:#e7edf7;color:var(--om-blue-deep);font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;}
+  .legend{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 12px;}
+  .legend span{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);}
+  .legend i{border:1px solid rgba(11,37,64,.10);}
+  .legend i{width:11px;height:11px;border-radius:3px;display:inline-block;}
+  .pool{
+    background:#f4f8fc;border:1px dashed #cfddea;border-radius:var(--radius);
+    padding:12px;margin-bottom:18px;min-height:110px;
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:10px;
+    transition:background .15s,border-color .15s;
+  }
+  .pool.empty-hint::after{content:"✅ Tous les joueurs sont placés !";grid-column:1/-1;text-align:center;color:var(--muted);font-size:14px;padding:22px 0;}
+
+  /* ---------- Columns ---------- */
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .zone{border-radius:var(--radius);padding:13px;min-height:240px;border:2px solid transparent;transition:transform .12s, box-shadow .15s, border-color .15s, background .15s;}
+  .zone-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;}
+  .zone-head h3{margin:0;font-size:15.5px;font-weight:800;display:flex;align-items:center;gap:7px;}
+  .zone-head .count{font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;color:#fff;}
+  .zone.keep{background:linear-gradient(180deg,rgba(43,209,126,.16),rgba(43,209,126,.06));border-color:rgba(43,209,126,.35);}
+  .zone.keep h3{color:#0f8a52;}
+  .zone.keep .count{background:var(--keep-deep);}
+  .zone.sell{background:linear-gradient(180deg,rgba(255,90,110,.16),rgba(255,90,110,.06));border-color:rgba(255,90,110,.35);}
+  .zone.sell h3{color:#c92f43;}
+  .zone.sell .count{background:var(--sell-deep);}
+  .zone .list{display:flex;flex-direction:column;gap:8px;min-height:56px;}
+  .zone .foot{margin-top:11px;padding-top:10px;border-top:1px dashed rgba(11,37,64,.14);font-size:12.5px;font-weight:700;display:flex;justify-content:space-between;align-items:center;}
+  .zone.keep .foot{color:var(--cost-deep);}
+  .zone.sell .foot{color:var(--sell-deep);}
+  .zone .foot.hide{display:none;}
+  .zone .drop-hint{text-align:center;color:#7b93ab;font-size:13px;padding:24px 8px;border:2px dashed rgba(11,37,64,.12);border-radius:12px;}
+  .zone.keep .drop-hint{color:#3f9c6c;border-color:rgba(43,209,126,.3);}
+  .zone.sell .drop-hint{color:#cc6b78;border-color:rgba(255,90,110,.3);}
+  .zone.over{transform:translateY(-2px);box-shadow:var(--shadow-lg);}
+  .zone.keep.over{border-color:var(--keep);background:linear-gradient(180deg,rgba(43,209,126,.30),rgba(43,209,126,.12));}
+  .zone.sell.over{border-color:var(--sell);background:linear-gradient(180deg,rgba(255,90,110,.30),rgba(255,90,110,.12));}
+  .pool.over{background:rgba(39,67,160,.14);border-color:var(--om-blue);}
+
+  /* ---------- Player card (compact) ---------- */
+  .card{
+    position:relative;background:var(--card);border-radius:12px;box-shadow:var(--shadow);
+    padding:8px 7px;display:flex;flex-direction:column;align-items:center;text-align:center;
+    cursor:grab;user-select:none;touch-action:none;transition:transform .12s, box-shadow .15s;border:1px solid rgba(11,37,64,.06);
+  }
+  .card:active{cursor:grabbing;}
+  /* pool card = horizontal */
+  .card.pool-card{align-items:stretch;text-align:left;padding:8px;}
+  .pc-top{display:flex;align-items:center;gap:7px;}
+  .pc-info{flex:1;min-width:0;}
+  .pc-info .name{margin-top:0;}
+  .pc-info .tags{justify-content:flex-start;margin-top:4px;}
+  .card.in-list{flex-direction:row;text-align:left;padding:7px 9px;gap:9px;align-items:center;}
+  .card .photo{width:40px;height:40px;border-radius:50%;object-fit:cover;background:#e8eef5;flex:0 0 auto;border:2px solid #fff;box-shadow:0 3px 7px rgba(6,22,40,.16);}
+  .card.in-list .photo{width:38px;height:38px;}
+  .card .photo-fallback{width:40px;height:40px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:14px;border:2px solid #fff;box-shadow:0 3px 7px rgba(6,22,40,.16);background:linear-gradient(135deg,var(--om-blue),var(--om-blue-deep));}
+  .card.in-list .photo-fallback{width:38px;height:38px;font-size:13px;}
+  .card .meta{flex:1;min-width:0;}
+  .card .num{position:absolute;top:5px;left:5px;background:var(--om-navy);color:#fff;font-size:10px;font-weight:800;width:19px;height:19px;border-radius:6px;display:flex;align-items:center;justify-content:center;}
+  .card.in-list .num{position:static;width:auto;height:auto;padding:1px 5px;border-radius:5px;font-size:10px;}
+  .card .name{font-weight:800;font-size:13px;margin-top:6px;line-height:1.15;color:var(--ink);}
+  .card.in-list .name{margin-top:0;font-size:13.5px;}
+  .card .pos{font-size:10px;color:var(--muted);font-weight:600;margin-top:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+  .card .tags{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin-top:6px;}
+  .card .val{font-size:10.5px;font-weight:800;color:var(--om-blue-deep);background:rgba(39,67,160,.12);padding:2px 7px;border-radius:999px;white-space:nowrap;}
+  .card .val.cost{color:var(--cost-deep);background:rgba(229,138,0,.14);}
+  .card .val.sal{color:#46566b;background:#eceff3;}
+  .card.in-list .meta-right{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px;text-align:right;}
+  .card.in-list .val{font-size:11px;}
+  .val.pos{color:var(--keep-deep);background:rgba(43,209,126,.14);}
+  .val.mut{color:var(--muted);background:rgba(11,37,64,.06);font-weight:700;}
+  /* status tags */
+  .tag{font-size:9px;font-weight:800;padding:2px 6px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;line-height:1.3;}
+  .tag.loan{background:var(--loan-bg);color:var(--cost-deep);}
+  .tag.exp{background:var(--exp-bg);color:var(--exp-ink);}
+  .tag.ret{background:#D9ECFF;color:var(--om-blue-deep);}
+  .tag.exer{background:#D6F4E4;color:#0f8a52;}
+  .tag.signed{background:#f6e9c8;color:#8a6d1f;}
+  .card .quick{display:flex;gap:4px;margin-top:7px;width:100%;}
+  .card.in-list .quick{display:none;}
+  .qbtn{flex:1;border:none;border-radius:7px;font-weight:800;font-size:9.5px;padding:5px 2px;cursor:pointer;color:#fff;transition:filter .12s, transform .1s;white-space:nowrap;}
+  .qbtn:active{transform:scale(.96);}
+  .qbtn.keep{background:var(--keep-deep);}
+  .qbtn.sell{background:var(--sell-deep);}
+  .qbtn:hover{filter:brightness(1.08);}
+  .card.in-list .back{background:rgba(11,37,64,.07);border:none;border-radius:8px;width:24px;height:24px;cursor:pointer;color:var(--muted);font-size:13px;font-weight:800;flex:0 0 auto;}
+  .card.in-list .back:hover{background:rgba(11,37,64,.14);}
+
+  .drag-ghost{position:fixed;z-index:9999;pointer-events:none;width:190px;transform:rotate(-2deg) scale(1.04);box-shadow:var(--shadow-lg);opacity:.97;}
+  .card.dragging{opacity:.35;}
+
+  /* ---------- Actions ---------- */
+  .actions{display:flex;gap:12px;justify-content:center;margin:24px 0 8px;flex-wrap:wrap;}
+  .btn{border:none;border-radius:12px;font-weight:800;font-size:15px;padding:14px 26px;cursor:pointer;transition:transform .12s, box-shadow .15s, filter .12s;letter-spacing:.01em;}
+  .btn:active{transform:translateY(1px);}
+  .btn-primary{background:linear-gradient(135deg,var(--om-gold),#17296B);color:#fff;box-shadow:0 10px 24px rgba(39,67,160,.35);}
+  .btn-primary:disabled{background:#3a4a5e;color:#7e8da0;box-shadow:none;cursor:not-allowed;}
+  .btn-primary:not(:disabled):hover{filter:brightness(1.05);transform:translateY(-1px);}
+  .btn-ghost{background:#eef3f8;color:var(--om-navy);border:1px solid #d8e2ec;}
+  .btn-ghost:hover{background:#e3ebf3;}
+  .hint-line{text-align:center;color:var(--muted);font-size:13px;margin-top:4px;}
+
+  /* ---------- Result modal ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(7,16,28,.78);backdrop-filter:blur(5px);display:none;align-items:flex-start;justify-content:center;padding:24px 16px;z-index:1000;overflow-y:auto;}
+  .overlay.show{display:flex;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .result{background:linear-gradient(180deg,#ffffff,#f3f7fb);border-radius:22px;max-width:780px;width:100%;box-shadow:var(--shadow-lg);overflow:hidden;animation:pop .3s cubic-bezier(.2,.9,.3,1.2);margin:auto 0;}
+  @keyframes pop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+  .result-head{background:linear-gradient(135deg,var(--om-blue),var(--om-blue-deep));color:#fff;padding:22px 24px 20px;text-align:center;position:relative;}
+  .result-head h2{margin:0;font-size:23px;font-weight:900;letter-spacing:-.02em;}
+  .result-head p{margin:6px 0 0;color:#e7f4fb;font-size:14px;}
+  .result-head .close{position:absolute;top:14px;right:16px;background:rgba(255,255,255,.2);border:none;color:#fff;width:34px;height:34px;border-radius:10px;font-size:18px;cursor:pointer;font-weight:700;}
+
+  .bilan{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:18px;}
+  .bcell{border-radius:14px;padding:13px 8px;text-align:center;border:1px solid;}
+  .bcell .bl{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+  .bcell .bv{font-size:clamp(17px,4.4vw,23px);font-weight:900;line-height:1.05;margin-top:5px;}
+  .bcell.sal{background:rgba(39,67,160,.12);border-color:rgba(39,67,160,.3);}
+  .bcell.sal .bl{color:var(--om-blue-deep);}
+  .bcell.sal .bv{color:var(--om-blue-deep);font-size:clamp(15px,3.4vw,19px);}
+  .bcell.pos{background:rgba(43,209,126,.12);border-color:rgba(43,209,126,.3);}
+  .bcell.pos .bl{color:#0f8a52;}.bcell.pos .bv{color:var(--keep-deep);}
+  .bcell.neg{background:rgba(229,138,0,.12);border-color:rgba(229,138,0,.3);}
+  .bcell.neg .bl{color:var(--cost-deep);}.bcell.neg .bv{color:var(--cost-deep);}
+  .bcell.net{background:linear-gradient(135deg,var(--om-navy),#13314f);border-color:transparent;}
+  .bcell.net .bl{color:#9fc7e6;}.bcell.net .bv{color:#fff;}
+  .bilan-note{margin:-6px 18px 8px;font-size:12px;color:#8090a4;text-align:center;}
+
+  .result-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:4px 18px 8px;}
+  .rcol h4{margin:0 0 8px;font-size:14px;font-weight:800;display:flex;align-items:center;gap:7px;}
+  .rcol.keep h4{color:var(--keep-deep);}
+  .rcol.sell h4{color:var(--sell-deep);}
+  .rcol ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
+  .rcol li{display:flex;align-items:center;gap:8px;background:#fff;border-radius:10px;padding:6px 9px;box-shadow:0 2px 6px rgba(6,22,40,.06);font-size:13px;}
+  .rcol li img,.rcol li .mini-fb{width:28px;height:28px;border-radius:50%;object-fit:cover;flex:0 0 auto;}
+  .rcol li .mini-fb{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px;background:linear-gradient(135deg,var(--om-blue),var(--om-blue-deep));}
+  .rcol li .rn{font-weight:700;flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:3px;}
+  .rcol li .rn b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;}
+  .rcol li .rv{font-weight:800;font-size:12px;white-space:nowrap;}
+  .rcol li .rv.pos{color:var(--keep-deep);}
+  .rcol li .rv.cost{color:var(--cost-deep);}
+  .rcol li .rv.mut{color:var(--muted);font-weight:700;}
+  .rcol li .rsal{font-size:10.5px;color:var(--muted);font-weight:600;}
+  .rcol .ctot{margin-top:8px;font-size:12.5px;font-weight:800;text-align:right;}
+  .rcol.keep .ctot{color:var(--cost-deep);}
+  .empty-col{color:#9aabbd;font-size:13px;text-align:center;padding:16px 0;border:1px dashed #cdd9e4;border-radius:10px;}
+
+  .community{padding:4px 20px 6px;border-top:1px solid #eef2f6;margin-top:6px;}
+  .community h4{margin:14px 0 8px;font-size:15px;color:var(--ink);font-weight:800;text-align:center;}
+  .comm-legend{display:flex;gap:16px;justify-content:center;font-size:11.5px;color:var(--muted);margin-bottom:12px;}
+  .comm-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:3px;}
+  .comm-legend .ci-keep{background:var(--keep);}
+  .comm-legend .ci-sell{background:var(--sell);}
+  .comm-loading{text-align:center;color:var(--muted);font-size:13px;padding:16px 0;}
+  .comm-spinner{display:inline-block;width:15px;height:15px;border:2px solid rgba(39,67,160,.25);border-top-color:var(--om-blue);border-radius:50%;animation:comm-spin .7s linear infinite;vertical-align:-3px;margin-right:8px;}
+  @keyframes comm-spin{to{transform:rotate(360deg);}}
+  .comm-row{display:flex;align-items:center;gap:9px;padding:5px 2px;}
+  .comm-row .mini{width:30px;height:30px;border-radius:50%;object-fit:cover;flex:0 0 auto;background:#e8eef5;}
+  .comm-row .mini.photo-fallback{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px;background:linear-gradient(135deg,var(--om-blue),var(--om-blue-deep));}
+  .comm-main{flex:1;min-width:0;}
+  .comm-name{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:12.5px;margin-bottom:4px;}
+  .comm-name b{font-weight:800;color:var(--ink);}
+  .comm-tot{color:var(--muted);font-weight:600;font-size:10.5px;white-space:nowrap;}
+  .comm-bar{display:flex;height:9px;border-radius:6px;overflow:hidden;background:#eef2f6;}
+  .comm-bar .cb-keep{background:var(--keep);}
+  .comm-bar .cb-sell{background:var(--sell);}
+  .comm-pct{font-size:11.5px;font-weight:800;white-space:nowrap;min-width:84px;text-align:right;}
+  .comm-pct .cp-keep{color:var(--keep-deep);}
+  .comm-pct .cp-sell{color:var(--sell-deep);}
+  .share{padding:8px 22px 24px;text-align:center;}
+  .share h4{margin:14px 0 12px;font-size:15px;color:var(--ink);font-weight:800;}
+  .share-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+  .sbtn{border:none;border-radius:12px;padding:12px 16px;font-weight:800;font-size:14px;cursor:pointer;color:#fff;display:inline-flex;align-items:center;gap:8px;transition:transform .12s,filter .12s;}
+  .sbtn:hover{filter:brightness(1.08);transform:translateY(-1px);}
+  .sbtn svg{width:18px;height:18px;fill:currentColor;}
+  .sbtn.x{background:#000;}.sbtn.fb{background:#1877F2;}.sbtn.wa{background:#25D366;}
+  .sbtn.native{background:linear-gradient(135deg,var(--om-blue),var(--om-blue-deep));}
+  .sbtn.copy{background:var(--om-navy);}
+  .sbtn.img{background:linear-gradient(135deg,var(--om-gold),#17296B);color:#fff;}
+  .sbtn:disabled{opacity:.6;cursor:wait;}
+  .copied{font-size:13px;color:var(--keep-deep);font-weight:700;margin-top:10px;height:18px;}
+
+  footer.cred{text-align:center;color:var(--muted);font-size:12px;margin-top:18px;line-height:1.5;}
+  footer.cred a{color:var(--om-blue-deep);}
+
+  @media (min-width:880px){
+    .pool{grid-template-columns:repeat(5,minmax(0,1fr));}
+    .qbtn{font-size:9px;padding:5px 1px;}
+  }
+  @media (max-width:680px){
+    body{padding:12px;}
+    .cols{grid-template-columns:1fr;}
+    .pool{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));}
+    .result-cols{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="app-head">
+    <div class="logo"><img src="https://cdn.sportmonks.com/images/soccer/teams/23/18647.png" alt="Équipe de France" onerror="this.style.display='none'"></div>
+    <div class="head-txt">
+      <h1>Équipe de France 2026 — <span>Encore ou Stop&nbsp;?</span></h1>
+      <p>Compose les Bleus de demain. Clique sur ENCORE ou STOP pour chaque joueur (le glisser-déposer marche aussi).</p>
+    </div>
+  </header>
+
+  <div class="summary">
+    <div class="stat"><div class="k">Joueurs placés</div><div class="v"><span id="placed">0</span><small>/<span id="total">0</span></small></div></div>
+    <div class="stat keep"><div class="k">✅ Encore</div><div class="v" id="keepCount">0</div></div>
+    <div class="stat sell"><div class="k">🛑 Stop</div><div class="v" id="sellCount">0</div></div>
+  </div>
+
+  <div class="pool" id="pool" data-zone="pool"></div>
+
+  <div class="cols">
+    <div class="zone keep" id="zoneKeep" data-zone="keep">
+      <div class="zone-head"><h3>✅ Encore</h3><span class="count" id="keepBadge">0</span></div>
+      <div class="list" id="keepList"></div>
+    </div>
+    <div class="zone sell" id="zoneSell" data-zone="sell">
+      <div class="zone-head"><h3>🛑 Stop</h3><span class="count" id="sellBadge">0</span></div>
+      <div class="list" id="sellList"></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-ghost" id="resetBtn">↺ Réinitialiser</button>
+    <button class="btn btn-primary" id="validateBtn" disabled>Valider la sélection ✓</button>
+  </div>
+  <p class="hint-line" id="hintLine">Place les 25 joueurs pour valider ta sélection.</p>
+
+  <footer class="cred">
+    Données : Sportmonks · Effectif équipe de France (26 CdM 2026 + joueurs additionnels)
+  </footer>
+</div>
+
+<!-- Result modal -->
+<div class="overlay" id="overlay">
+  <div class="result">
+    <div class="result-head">
+      <button class="close" id="closeBtn">✕</button>
+      <h2>Ton équipe de France 2026 🇫🇷</h2>
+      <p id="resultSub"></p>
+    </div>
+    <div class="result-cols">
+      <div class="rcol keep">
+        <h4>✅ Encore (<span id="rKeepN">0</span>)</h4>
+        <ul id="rKeep"></ul>
+      </div>
+      <div class="rcol sell">
+        <h4>🛑 Stop (<span id="rSellN">0</span>)</h4>
+        <ul id="rSell"></ul>
+      </div>
+    </div>
+    <div class="community" id="community">
+      <h4>📊 L'avis de la communauté</h4>
+      <div class="comm-legend"><span><i class="ci-keep"></i> Encore</span><span><i class="ci-sell"></i> Stop</span></div>
+      <div id="commList"><div class="comm-loading"><span class="comm-spinner"></span>Chargement de l'avis de la communauté…</div></div>
+    </div>
+    <div class="share">
+      <h4>Partage ta sélection 📣</h4>
+      <div class="share-btns">
+        <button class="sbtn img" id="shImg">📸 Télécharger l'image</button>
+        <button class="sbtn native" id="shNative" style="display:none">📲 Partager</button>
+        <button class="sbtn x" id="shX"><svg viewBox="0 0 24 24"><path d="M18.9 1.6h3.5l-7.6 8.7L23.7 22h-7l-5.5-7.2L4.9 22H1.4l8.1-9.3L.7 1.6h7.2l5 6.6 5.9-6.6Zm-1.2 18.3h1.9L6.4 3.6H4.3l13.4 16.3Z"/></svg>X</button>
+        <button class="sbtn fb" id="shFb"><svg viewBox="0 0 24 24"><path d="M24 12a12 12 0 1 0-13.9 11.9v-8.4H7v-3.5h3.1V9.4c0-3 1.8-4.7 4.5-4.7 1.3 0 2.7.2 2.7.2v3h-1.5c-1.5 0-2 .9-2 1.9v2.2h3.4l-.5 3.5h-2.9v8.4A12 12 0 0 0 24 12Z"/></svg>Facebook</button>
+        <button class="sbtn wa" id="shWa"><svg viewBox="0 0 24 24"><path d="M.1 24l1.7-6.2A11.9 11.9 0 1 1 12 24a12 12 0 0 1-5.9-1.6L.1 24Zm6.3-3.9.4.2a9.9 9.9 0 0 0 5.2 1.4 9.9 9.9 0 1 0-8.4-4.6l.3.4-1 3.7 3.5-1.1ZM17.5 14c-.1-.2-.5-.4-1-.6-.5-.3-2.9-1.4-3.3-1.6-.4-.2-.8-.2-1.1.2-.3.5-1.2 1.6-1.5 1.9-.3.3-.5.3-1 .1-3-1.5-4.9-2.6-6.9-5.9-.5-.9.5-.8 1.5-2.8.1-.3.1-.6 0-.8-.2-.2-1.1-2.6-1.5-3.6-.4-.9-.8-.8-1.1-.8h-.9c-.3 0-.8.1-1.2.6-.4.5-1.6 1.6-1.6 3.9 0 2.3 1.7 4.5 1.9 4.8.2.3 3.3 5 8 7 3 1.2 4.1 1.3 5.5 1.1.9-.1 2.9-1.2 3.3-2.3.4-1.1.4-2.1.3-2.3Z"/></svg>WhatsApp</button>
+        <button class="sbtn copy" id="shCopy">🔗 Copier le texte</button>
+      </div>
+      <div class="copied" id="copied"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =================================================================
+   CONFIGURATION — à personnaliser
+   ================================================================= */
+const CONFIG = {
+  shareUrl: "https://www.tonsite.fr/equipe-de-france/",   // FALLBACK : utilisé seulement si l'URL de la page hôte n'est pas détectée
+  hashtags: "EquipeDeFrance,Bleus,FiersDetreBleus",
+  // Endpoint Google Apps Script (collecte + stats des votes). Vide = fonctionnalité désactivée.
+  votesUrl: ""
+};
+
+/* =================================================================
+   DONNÉES — Effectif équipe de France (source Sportmonks).
+   "val" = valeur marchande estimée en M€ (INDICATIVE — édite librement).
+   ================================================================= */
+const PLAYERS = [{"id": 96227, "name": "Mike Maignan", "group": "Gardien", "img": "https://cdn.sportmonks.com/images/soccer/players/3/96227.png"}, {"id": 96030, "name": "Brice Samba", "group": "Gardien", "img": "https://cdn.sportmonks.com/images/soccer/players/30/96030.png"}, {"id": 37608935, "name": "Robin Risser", "group": "Gardien", "img": "https://cdn.sportmonks.com/images/soccer/players/7/37608935.png"}, {"id": 186995, "name": "Théo Hernández", "group": "Défenseur", "img": "https://cdn.sportmonks.com/images/soccer/players/19/186995.png"}, {"id": 95368, "name": "Lucas Digne", "group": "Défenseur", "img": "https://cdn.sportmonks.com/images/soccer/players/8/95368.png"}, {"id": 100556, "name": "Ibrahima Konaté", "group": "Défenseur", "img": "https://cdn.sportmonks.com/images/soccer/players/12/100556.png"}, {"id": 186797, "name": "Lucas Hernández", "group": "Défenseur", "img": "https://cdn.sportmonks.com/images/soccer/players/13/186797.png"}, {"id": 5666458, "name": "Maxence Lacroix", "group": "Défenseur", "img": "https://cdn.sportmonks.com/images/soccer/players/26/5666458.png"}, {"id": 37317367, "name": "Malo Gusto", "group": "Défenseur", "img": "https://cdn.sportmonks.com/images/soccer/players/23/37317367.png"}, {"id": 337394, "name": "Jules Koundé", "group": "Défenseur", "img": "https://cdn.sportmonks.com/images/soccer/players/18/337394.png"}, {"id": 17544737, "name": "William Saliba", "group": "Défenseur", "img": "https://cdn.sportmonks.com/images/soccer/players/1/17544737.png"}, {"id": 33685, "name": "Dayot Upamecano", "group": "Défenseur", "img": "https://cdn.sportmonks.com/images/soccer/players/21/33685.png"}, {"id": 95694, "name": "Adrien Rabiot", "group": "Milieu", "img": "https://cdn.sportmonks.com/images/soccer/players/14/95694.png"}, {"id": 5270371, "name": "Aurélien Tchouaméni", "group": "Milieu", "img": "https://cdn.sportmonks.com/images/soccer/players/3/5270371.png"}, {"id": 23738800, "name": "Manu Koné", "group": "Milieu", "img": "https://cdn.sportmonks.com/images/soccer/players/16/23738800.png"}, {"id": 37593237, "name": "Warren Zaïre-Emery", "group": "Milieu", "img": "https://cdn.sportmonks.com/images/soccer/players/21/37593237.png"}, {"id": 1193, "name": "N'Golo Kanté", "group": "Milieu", "img": "https://cdn.sportmonks.com/images/soccer/players/9/1193.png"}, {"id": 37317369, "name": "Bradley Barcola", "group": "Attaquant", "img": "https://cdn.sportmonks.com/images/soccer/players/25/37317369.png"}, {"id": 37590938, "name": "Désiré Doué", "group": "Attaquant", "img": "https://cdn.sportmonks.com/images/soccer/players/26/37590938.png"}, {"id": 21072805, "name": "Rayan Cherki", "group": "Attaquant", "img": "https://cdn.sportmonks.com/images/soccer/players/5/21072805.png"}, {"id": 24799984, "name": "Michael Olise", "group": "Attaquant", "img": "https://cdn.sportmonks.com/images/soccer/players/16/24799984.png"}, {"id": 96611, "name": "Kylian Mbappé", "group": "Attaquant", "img": "https://cdn.sportmonks.com/images/soccer/players/3/96611.png"}, {"id": 99000, "name": "Marcus Thuram", "group": "Attaquant", "img": "https://cdn.sportmonks.com/images/soccer/players/24/99000.png"}, {"id": 37530901, "name": "Maghnes Akliouche", "group": "Attaquant", "img": "https://cdn.sportmonks.com/images/soccer/players/21/37530901.png"}, {"id": 32403, "name": "Ousmane Dembélé", "group": "Attaquant", "img": "https://cdn.sportmonks.com/images/soccer/players/19/32403.png"}, {"id": 96950, "name": "Jean-Philippe Mateta", "group": "Attaquant", "img": "https://cdn.sportmonks.com/images/soccer/players/22/96950.png"}, {"id": 97706, "name": "Jean Butez", "group": "Gardien", "img": "https://cdn.sportmonks.com/images/soccer/players/10/97706.png"}, {"id": 37584869, "name": "Guillaume Restes", "group": "Gardien", "img": "https://cdn.sportmonks.com/images/soccer/players/5/37584869.png"}, {"id": 37600357, "name": "Leny Yoro", "group": "Défenseur", "img": "https://cdn.sportmonks.com/images/soccer/players/5/37600357.png"}, {"id": 28543553, "name": "Adrien Truffert", "group": "Défenseur", "img": "https://cdn.sportmonks.com/images/soccer/players/1/28543553.png"}, {"id": 37351292, "name": "Maxime Estève", "group": "Défenseur", "img": "https://cdn.sportmonks.com/images/soccer/players/28/37351292.png"}, {"id": 37631909, "name": "Jérémy Jacquet", "group": "Défenseur", "img": "https://cdn.sportmonks.com/images/soccer/players/5/37631909.png"}, {"id": 65528, "name": "Mathieu Udol", "group": "Défenseur", "img": "https://cdn.sportmonks.com/images/soccer/players/24/65528.png"}, {"id": 14726357, "name": "Pierre Kalulu", "group": "Défenseur", "img": "https://cdn.sportmonks.com/images/soccer/players/21/14726357.png"}, {"id": 10279739, "name": "Loïc Badé", "group": "Défenseur", "img": "https://cdn.sportmonks.com/images/soccer/players/27/10279739.png"}, {"id": 37579899, "name": "Kevin Danois", "group": "Milieu", "img": "https://cdn.sportmonks.com/images/soccer/players/27/37579899.png"}, {"id": 37590937, "name": "Djaoui Cissé", "group": "Milieu", "img": "https://cdn.sportmonks.com/images/soccer/players/25/37590937.png"}, {"id": 23269626, "name": "Enzo Millot", "group": "Milieu", "img": "https://cdn.sportmonks.com/images/soccer/players/26/23269626.png"}, {"id": 23688922, "name": "Eduardo Camavinga", "group": "Milieu", "img": "https://cdn.sportmonks.com/images/soccer/players/26/23688922.png"}, {"id": 96122, "name": "Corentin Tolisso", "group": "Milieu", "img": "https://cdn.sportmonks.com/images/soccer/players/26/96122.png"}, {"id": 97087, "name": "Mateo Guendouzi", "group": "Milieu", "img": "https://cdn.sportmonks.com/images/soccer/players/31/97087.png"}, {"id": 4545404, "name": "Khéphren Thuram", "group": "Milieu", "img": "https://cdn.sportmonks.com/images/soccer/players/28/4545404.png"}, {"id": 37531504, "name": "Mathys Tel", "group": "Attaquant", "img": "https://cdn.sportmonks.com/images/soccer/players/16/37531504.png"}, {"id": 37632336, "name": "Eli Junior Kroupi", "group": "Attaquant", "img": "https://cdn.sportmonks.com/images/soccer/players/16/37632336.png"}, {"id": 37328128, "name": "Mathis Abline", "group": "Attaquant", "img": "https://cdn.sportmonks.com/images/soccer/players/0/37328128.png"}, {"id": 432872, "name": "Randal Kolo Muani", "group": "Attaquant", "img": "https://cdn.sportmonks.com/images/soccer/players/8/432872.png"}, {"id": 4237, "name": "Florian Thauvin", "group": "Attaquant", "img": "https://cdn.sportmonks.com/images/soccer/players/13/4237.png"}, {"id": 13187047, "name": "Esteban Lepaul", "group": "Attaquant", "img": "https://cdn.sportmonks.com/images/soccer/players/7/13187047.png"}];
+
+/* Statuts spéciaux — vides pour l'équipe de France (tous les joueurs sont sélectionnables) */
+const RETURNING = [];
+
+/* =================================================================
+   STATUTS PARTICULIERS
+   - loan  : joueur prêté -> ne rapporte rien à la vente.
+             option = montant (M€) à payer pour le garder, ou null si pas d'option.
+   - expiring : fin de contrat -> part libre, rapporte 0 €.
+   ================================================================= */
+const LOAN = {};
+/* Options d'achat OBLIGATOIRES (déjà levées) -> joueurs de l'effectif OM, vendables. */
+const EXERCISED = [];
+const EXPIRING = [];
+const SIGNED = [];
+
+/* Salaire annuel brut estimé (M€/an) — source Capology. Clé = id joueur. */
+const SALARIES = {};
+
+PLAYERS.forEach(p=>{
+  if(p.ret){ p.status='returning'; p.option=null; }
+  else if(SIGNED.includes(p.name)){ p.status='signed'; p.option=null; }
+  else if(EXERCISED.includes(p.name)){ p.status='exercised'; p.option=null; }
+  else if(p.name in LOAN){ p.status='loan'; p.option=LOAN[p.name]; }
+  else if(EXPIRING.includes(p.name)){ p.status='expiring'; p.option=null; }
+  else { p.status='owned'; p.option=null; }
+  p.sal = SALARIES[p.id];
+});
+
+/* Tri par poste : Gardiens -> Défenseurs -> Milieux -> Attaquants (ordre stable dans chaque groupe) */
+const GROUP_ORDER = {"Gardien":0, "Défenseur":1, "Milieu":2, "Attaquant":3};
+PLAYERS.sort((a,b)=>(GROUP_ORDER[a.group] ?? 9) - (GROUP_ORDER[b.group] ?? 9));
+
+/* =================================================================
+   ÉTAT & HELPERS
+   ================================================================= */
+const TOTAL = PLAYERS.length;
+const state = {};
+PLAYERS.forEach(p => state[p.id] = 'pool');
+
+const $ = s => document.querySelector(s);
+const pool=$('#pool'), keepList=$('#keepList'), sellList=$('#sellList');
+
+function fmtM(n){
+  const s = Number.isInteger(n) ? n.toString() : n.toFixed(1).replace('.', ',');
+  return s + ' M€';
+}
+function fmtSigned(n){
+  if(n===0) return '0 M€';
+  return (n>0?'+':'−') + fmtM(Math.abs(n));
+}
+function fmtSal(m){ // m en M€/an
+  return m.toFixed(2).replace(/\.?0+$/,'').replace('.', ',') + ' M€/an';
+}
+function initials(name){
+  const parts=name.split(' ').filter(Boolean);
+  return ((parts[0]?.[0]||'')+(parts[parts.length-1]?.[0]||'')).toUpperCase();
+}
+// nom de famille uniquement (en conservant les particules : de, van, da…)
+const NAME_PARTICLES=new Set(['de','del','van','von','da','dos','das','di','le','la','el','bin','ben']);
+function lastName(name){
+  const parts=name.trim().split(/\s+/);
+  if(parts.length<=1) return name;
+  let i=parts.length-1;
+  while(i-1>=0 && NAME_PARTICLES.has(parts[i-1].toLowerCase())) i--;
+  return parts.slice(i).join(' ');
+}
+const SHORT = {186995:"T. Hernández", 186797:"L. Hernández", 99000:"M. Thuram", 4545404:"K. Thuram", 432872:"Kolo Muani"};
+function displayName(p){ return SHORT[p.id] || lastName(p.name); }
+// recovery from selling/letting a player go (loans & free agents bring nothing)
+function recovery(p){ return (p.status==='loan'||p.status==='expiring') ? 0 : p.val; }
+// cost to keep a player (buy-option for loans)
+function keepCost(p){ return (p.status==='loan' && p.option!=null) ? p.option : 0; }
+function statusTag(p, prefix=''){
+  if(p.status==='loan') return `<span class="tag loan">${prefix}Prêté</span>`;
+  if(p.status==='expiring') return `<span class="tag exp">${prefix}Fin de contrat</span>`;
+  if(p.status==='exercised') return `<span class="tag exer">${prefix}Option levée</span>`;
+  if(p.status==='signed') return `<span class="tag signed">${prefix}Recrue</span>`;
+  return '';
+}
+function salaryPill(p){
+  if(p.sal==null) return '';
+  return `<span class="val sal" title="Salaire annuel brut estimé (Capology)">💶 ${fmtSal(p.sal)}</span>`;
+}
+function salLine(p){
+  if(p.sal==null) return '';
+  return `<span class="rsal">💶 ${fmtSal(p.sal)}</span>`;
+}
+function photoHTML(p, cls){
+  return `<img class="${cls}" src="${p.img}" alt="${p.name}" loading="lazy"
+    onerror="this.outerHTML='<div class=&quot;${cls} photo-fallback&quot;>${initials(p.name)}</div>'">`;
+}
+
+/* =================================================================
+   CARTES
+   ================================================================= */
+function buildPoolCard(p){
+  const el=document.createElement('div');
+  el.className='card pool-card'; el.dataset.id=p.id;
+  el.innerHTML=`
+    <div class="pc-top">
+      ${photoHTML(p,'photo')}
+      <div class="pc-info"><div class="name">${displayName(p)}</div></div>
+    </div>
+    <div class="quick">
+      <button class="qbtn keep" data-act="keep">✅ Encore</button>
+      <button class="qbtn sell" data-act="sell">🛑 Stop</button>
+    </div>`;
+  return el;
+}
+function buildListCard(p, zone){
+  const el=document.createElement('div');
+  el.className='card in-list'; el.dataset.id=p.id;
+  el.innerHTML=`
+    ${photoHTML(p,'photo')}
+    <div class="meta"><div class="name">${displayName(p)}</div></div>
+    <button class="back" title="Renvoyer dans l'effectif">↩</button>`;
+  return el;
+}
+
+/* =================================================================
+   RENDU
+   ================================================================= */
+function render(){
+  pool.innerHTML=''; keepList.innerHTML=''; sellList.innerHTML='';
+  let keepN=0, sellN=0, placed=0;
+
+  PLAYERS.forEach(p=>{
+    const z=state[p.id];
+    if(z==='pool'){ pool.appendChild(buildPoolCard(p)); }
+    else if(z==='keep'){ keepList.appendChild(buildListCard(p,'keep')); keepN++; placed++; }
+    else if(z==='sell'){ sellList.appendChild(buildListCard(p,'sell')); sellN++; placed++; }
+  });
+
+  pool.classList.toggle('empty-hint', pool.children.length===0);
+  if(keepN===0) keepList.innerHTML='<div class="drop-hint">Glisse ici les joueurs à garder (Encore)</div>';
+  if(sellN===0) sellList.innerHTML='<div class="drop-hint">Glisse ici les joueurs à arrêter (Stop)</div>';
+
+  $('#placed').textContent=placed;
+  $('#total').textContent=TOTAL;
+  $('#keepCount').textContent=keepN;
+  $('#sellCount').textContent=sellN;
+  $('#keepBadge').textContent=keepN;
+  $('#sellBadge').textContent=sellN;
+
+  const done=placed===TOTAL;
+  $('#validateBtn').disabled=!done;
+  $('#hintLine').textContent = done ? '🎉 Sélection complète ! Tu peux valider.' : `Encore ${TOTAL-placed} joueur(s) à placer pour valider.`;
+
+  attachInteractions();
+  postHeight();
+}
+
+/* =================================================================
+   INTERACTIONS : drag & drop (pointer) + boutons rapides
+   ================================================================= */
+function moveTo(id, zone){
+  const pl=PLAYERS.find(x=>x.id===id);
+  if(pl && pl.status==='signed' && zone==='sell') return; // recrue non transférable
+  state[id]=zone; render();
+}
+function attachInteractions(){
+  document.querySelectorAll('.card').forEach(c=>c.addEventListener('pointerdown', onPointerDown));
+  document.querySelectorAll('.qbtn').forEach(b=>b.addEventListener('click', e=>{
+    e.stopPropagation();
+    moveTo(+e.target.closest('.card').dataset.id, e.target.dataset.act);
+  }));
+  document.querySelectorAll('.card.in-list .back').forEach(b=>b.addEventListener('click', e=>{
+    e.stopPropagation();
+    moveTo(+e.target.closest('.card').dataset.id, 'pool');
+  }));
+}
+
+let drag=null;
+function onPointerDown(e){
+  if(e.target.closest('.qbtn')||e.target.closest('.back')) return;
+  if(e.button && e.button!==0) return;
+  const card=e.currentTarget, rect=card.getBoundingClientRect();
+  drag={id:+card.dataset.id, card, started:false, startX:e.clientX, startY:e.clientY,
+        offX:e.clientX-rect.left, offY:e.clientY-rect.top, ghost:null, overZone:null};
+  card.setPointerCapture(e.pointerId);
+  card.addEventListener('pointermove', onPointerMove);
+  card.addEventListener('pointerup', onPointerUp);
+  card.addEventListener('pointercancel', onPointerUp);
+}
+function onPointerMove(e){
+  if(!drag) return;
+  if(!drag.started){
+    if(Math.hypot(e.clientX-drag.startX, e.clientY-drag.startY) < 6) return;
+    startGhost();
+  }
+  const g=drag.ghost;
+  g.style.left=(e.clientX-drag.offX)+'px';
+  g.style.top=(e.clientY-drag.offY)+'px';
+  g.style.display='none';
+  const below=document.elementFromPoint(e.clientX,e.clientY);
+  g.style.display='';
+  setOver(below ? below.closest('[data-zone]') : null);
+}
+function startGhost(){
+  drag.started=true;
+  const g=drag.card.cloneNode(true);
+  g.classList.add('drag-ghost'); g.classList.remove('in-list');
+  g.style.width='190px';
+  document.body.appendChild(g);
+  drag.ghost=g; drag.card.classList.add('dragging');
+}
+function setOver(zoneEl){
+  if(drag.overZone===zoneEl) return;
+  if(drag.overZone) drag.overZone.classList.remove('over');
+  drag.overZone=zoneEl;
+  if(zoneEl) zoneEl.classList.add('over');
+}
+function onPointerUp(){
+  if(!drag) return;
+  const card=drag.card;
+  card.removeEventListener('pointermove', onPointerMove);
+  card.removeEventListener('pointerup', onPointerUp);
+  card.removeEventListener('pointercancel', onPointerUp);
+  if(drag.started){
+    if(drag.ghost) drag.ghost.remove();
+    card.classList.remove('dragging');
+    if(drag.overZone){ const z=drag.overZone.dataset.zone; drag.overZone.classList.remove('over'); moveTo(drag.id, z); }
+  }
+  drag=null;
+}
+
+/* =================================================================
+   ACTIONS
+   ================================================================= */
+$('#resetBtn').addEventListener('click', ()=>{ PLAYERS.forEach(p=>state[p.id]='pool'); render(); });
+$('#validateBtn').addEventListener('click', showResult);
+$('#closeBtn').addEventListener('click', ()=>$('#overlay').classList.remove('show'));
+$('#overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') $('#overlay').classList.remove('show'); });
+
+function selection(){
+  const keep=PLAYERS.filter(p=>state[p.id]==='keep');
+  const sell=PLAYERS.filter(p=>state[p.id]==='sell');
+  return {keep, sell};
+}
+
+function showResult(){
+  const {keep, sell}=selection();
+  $('#resultSub').textContent=`${keep.length} « Encore » · ${sell.length} « Stop »`;
+  $('#rKeepN').textContent=keep.length;
+  $('#rSellN').textContent=sell.length;
+  const li=p=>`<li>${photoHTML(p,'mini')}<span class="rn"><b>${displayName(p)}</b></span></li>`;
+  $('#rKeep').innerHTML = keep.length ? keep.map(li).join('') : '<div class="empty-col">Aucun joueur</div>';
+  $('#rSell').innerHTML = sell.length ? sell.map(li).join('') : '<div class="empty-col">Aucun joueur</div>';
+  document.querySelectorAll('#rKeep .mini, #rSell .mini').forEach(img=>{
+    img.style.width='28px';img.style.height='28px';img.style.borderRadius='50%';img.style.objectFit='cover';img.style.flex='0 0 auto';
+  });
+  $('#overlay').classList.add('show');
+  $('#copied').textContent='';
+  submitVotes();
+  loadCommunity();
+  postHeight();
+}
+
+/* =================================================================
+   VOTES COMMUNAUTÉ (Google Apps Script)
+   ================================================================= */
+const VOTED_KEY = 'equipeFrance_voted_v1';
+function submitVotes(){
+  if(!CONFIG.votesUrl) return;
+  if(localStorage.getItem(VOTED_KEY)) return; // 1 vote par navigateur
+  const choices = PLAYERS
+    .filter(p=>state[p.id]==='keep'||state[p.id]==='sell')
+    .map(p=>({id:p.id, name:p.name, choice:state[p.id]}));
+  if(!choices.length) return;
+  const session = 'fr-'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+  try{
+    fetch(CONFIG.votesUrl, {
+      method:'POST', mode:'no-cors', keepalive:true,
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({session, choices})
+    });
+    localStorage.setItem(VOTED_KEY, '1');
+  }catch(_){}
+}
+function loadCommunity(){
+  const box=$('#commList');
+  if(!CONFIG.votesUrl){ $('#community').style.display='none'; return; }
+  box.innerHTML='<div class="comm-loading"><span class="comm-spinner"></span>Chargement de l\'avis de la communauté…</div>';
+  fetch(CONFIG.votesUrl + '?_=' + Date.now(), {method:'GET'})
+    .then(r=>r.json())
+    .then(data=>renderCommunity(data))
+    .catch(()=>{ box.innerHTML='<div class="comm-loading">Avis de la communauté indisponible pour le moment.</div>'; postHeight(); });
+}
+function renderCommunity(data){
+  const box=$('#commList');
+  const map={};
+  (data && data.players || []).forEach(r=>{ map[r.id]={keep:+r.keep||0, sell:+r.sell||0}; });
+  const rows=PLAYERS.map(p=>{
+    const d=map[p.id]||{keep:0,sell:0}; const tot=d.keep+d.sell;
+    return {p, keep:d.keep, sell:d.sell, tot};
+  }).filter(r=>r.tot>0).sort((a,b)=>(b.sell/b.tot)-(a.sell/a.tot));
+  if(!rows.length){
+    box.innerHTML='<div class="comm-loading">Sois le premier à voter ! Les résultats de la communauté s\'afficheront ici.</div>';
+    postHeight(); return;
+  }
+  box.innerHTML=rows.map(r=>{
+    const keepPct=Math.round(r.keep/r.tot*100), sellPct=100-keepPct;
+    return `<div class="comm-row">
+      ${photoHTML(r.p,'mini')}
+      <div class="comm-main">
+        <div class="comm-name"><b>${displayName(r.p)}</b><span class="comm-tot">${r.tot} vote${r.tot>1?'s':''}</span></div>
+        <div class="comm-bar"><span class="cb-keep" style="width:${keepPct}%"></span><span class="cb-sell" style="width:${sellPct}%"></span></div>
+      </div>
+      <div class="comm-pct"><span class="cp-keep">${keepPct}%</span> / <span class="cp-sell">${sellPct}%</span></div>
+    </div>`;
+  }).join('');
+  postHeight();
+}
+
+/* =================================================================
+   PARTAGE
+   ================================================================= */
+/* URL de la page hôte pour les partages — détectée automatiquement :
+   1) message postMessage envoyé par la page parente (URL complète, le plus précis)
+   2) document.referrer (au moins le domaine de la page hôte)
+   3) fallback : CONFIG.shareUrl */
+let HOST_URL='';
+let PARENT_ORIGIN='*'; // origine de la page parente, pour cibler les postMessage sortants
+let gotParentUrl=false;
+try{
+  if(window.location.ancestorOrigins && window.location.ancestorOrigins.length){
+    PARENT_ORIGIN=window.location.ancestorOrigins[0];
+  } else if(document.referrer){
+    PARENT_ORIGIN=new URL(document.referrer).origin;
+  }
+  if(document.referrer){
+    const r=new URL(document.referrer);
+    if(r.origin!==location.origin) HOST_URL=document.referrer;
+  }
+}catch(_){}
+window.addEventListener('message', function(e){
+  if(e.source && e.source!==window.parent) return; // n'accepter que les messages du parent direct
+  if(e.data && e.data.type==='mercato-fr-parent-url' && typeof e.data.url==='string' && e.data.url){
+    HOST_URL=e.data.url; gotParentUrl=true;
+  }
+});
+/* Handshake : on réclame l'URL de la page au parent, avec relances jusqu'à réception.
+   Robuste quel que soit l'ordre de chargement (iframe avant/après le script parent). */
+(function(){
+  if(window.parent===window) return;
+  let tries=0;
+  (function ask(){
+    if(gotParentUrl || tries>=10) return;
+    tries++;
+    try{ window.parent.postMessage({type:'mercato-fr-ready'}, PARENT_ORIGIN); }catch(_){}
+    setTimeout(ask, 400);
+  })();
+})();
+function shareUrl(){ return HOST_URL || CONFIG.shareUrl; }
+
+function shareText(){
+  const {keep, sell}=selection();
+  let t=`🇫🇷 Mes Bleus pour 2026 !\n`;
+  t+=`Je garde ${keep.length} joueur${keep.length>1?'s':''} (Encore) et j'en arrête ${sell.length} (Stop).\n`;
+  t+=`Et toi, tu gardes qui chez les Bleus ? 👇`;
+  return t;
+}
+const openShare=u=>window.open(u,'_blank','noopener,noreferrer');
+$('#shX').addEventListener('click', ()=>openShare(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText())}&url=${encodeURIComponent(shareUrl())}&hashtags=${encodeURIComponent(CONFIG.hashtags)}`));
+$('#shFb').addEventListener('click', ()=>openShare(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl())}&quote=${encodeURIComponent(shareText())}`));
+$('#shWa').addEventListener('click', ()=>openShare(`https://wa.me/?text=${encodeURIComponent(shareText()+'\n'+shareUrl())}`));
+$('#shCopy').addEventListener('click', async ()=>{
+  try{ await navigator.clipboard.writeText(shareText()+'\n'+shareUrl()); $('#copied').textContent='✓ Texte copié !'; }
+  catch(_){ $('#copied').textContent='Copie impossible — sélectionne et copie manuellement.'; }
+});
+if(navigator.share){
+  const b=$('#shNative'); b.style.display='inline-flex';
+  b.addEventListener('click', ()=>navigator.share({title:'Équipe de France 2026', text:shareText(), url:shareUrl()}).catch(()=>{}));
+}
+
+/* =================================================================
+   TÉLÉCHARGER L'IMAGE DU RÉSULTAT (canvas)
+   ================================================================= */
+const FONT='system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+function rrect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function loadImg(src){
+  return new Promise(res=>{ const im=new Image(); im.crossOrigin='anonymous';
+    im.onload=()=>res(im); im.onerror=()=>res(null); im.src=src; });
+}
+function ellipsize(ctx,text,maxW){
+  if(ctx.measureText(text).width<=maxW) return text;
+  let t=text;
+  while(t.length>1 && ctx.measureText(t+'…').width>maxW) t=t.slice(0,-1);
+  return t+'…';
+}
+function imgRowValue(p, zone){
+  if(zone==='keep'){
+    if(p.status==='loan' && p.option!=null) return {txt:'Option '+fmtM(p.option), color:'#9a5a00'};
+    if(p.status==='expiring') return {txt:'Libre', color:'#8090a4'};
+    return {txt:fmtM(p.val), color:'#0E1636'};
+  }
+  return recovery(p)>0 ? {txt:'+'+fmtM(p.val), color:'#13965a'} : {txt:'0 €', color:'#8090a4'};
+}
+function drawAvatar(ctx,p,imgs,cx,cy,r){
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.closePath();
+  ctx.fillStyle='#e8eef5'; ctx.fill(); ctx.clip();
+  const im=imgs[p.id];
+  if(im){ ctx.drawImage(im, cx-r, cy-r, r*2, r*2); }
+  else {
+    ctx.fillStyle='#17296B'; ctx.fillRect(cx-r,cy-r,r*2,r*2);
+    ctx.fillStyle='#fff'; ctx.font='800 '+Math.round(r*0.82)+'px '+FONT;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(initials(p.name), cx, cy+1);
+  }
+  ctx.restore();
+}
+
+async function downloadImage(){
+  const btn=$('#shImg'); const old=btn.textContent;
+  btn.disabled=true; btn.textContent='Génération…';
+  try{
+    const {keep, sell}=selection();
+    const imgs={};
+    await Promise.all([...keep,...sell].map(async p=>{ imgs[p.id]=await loadImg(p.img); }));
+    const logo=await loadImg('https://cdn.sportmonks.com/images/soccer/teams/23/18647.png');
+
+    const scale=2, W=1080, pad=44, colGap=28;
+    const colW=(W-2*pad-colGap)/2;
+    const colTop=190, colHeadH=52, rowsGap=14, rowH=56;
+    const maxRows=Math.max(keep.length, sell.length, 1);
+    const rowsTop=colTop+colHeadH+rowsGap;
+    const footerTop=rowsTop+maxRows*rowH+12;
+    const H=footerTop+72;
+
+    const cv=document.createElement('canvas');
+    cv.width=W*scale; cv.height=H*scale;
+    const ctx=cv.getContext('2d'); ctx.scale(scale,scale);
+    ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,W,H);
+
+    const ls=84, lx=pad, ly=34;
+    ctx.save(); rrect(ctx,lx,ly,ls,ls,18); ctx.fillStyle='#fff'; ctx.fill();
+    ctx.lineWidth=1; ctx.strokeStyle='#e6edf4'; ctx.stroke(); ctx.clip();
+    if(logo) ctx.drawImage(logo, lx+12, ly+12, ls-24, ls-24);
+    ctx.restore();
+    const tx=lx+ls+22;
+    ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+    ctx.fillStyle='#0E1636'; ctx.font='800 40px '+FONT;
+    ctx.fillText('Équipe de France 2026', tx, ly+40);
+    ctx.fillStyle='#17296B'; ctx.font='800 33px '+FONT;
+    ctx.fillText('Encore ou Stop ?', tx, ly+80);
+
+    ctx.strokeStyle='#e6edf4'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad,164); ctx.lineTo(W-pad,164); ctx.stroke();
+
+    function colHeader(x, label, bg, fg){
+      ctx.save(); rrect(ctx,x,colTop,colW,colHeadH,14); ctx.fillStyle=bg; ctx.fill(); ctx.restore();
+      ctx.fillStyle=fg; ctx.font='800 26px '+FONT; ctx.textAlign='left'; ctx.textBaseline='middle';
+      ctx.fillText(label, x+18, colTop+colHeadH/2+1);
+    }
+    const xL=pad, xR=pad+colW+colGap;
+    colHeader(xL, '✅  Encore ('+keep.length+')', '#dff4e8', '#0f8a52');
+    colHeader(xR, '🛑  Stop ('+sell.length+')', '#ffe1e5', '#c92f43');
+
+    function drawCol(list, x){
+      if(!list.length){
+        ctx.fillStyle='#9aabbd'; ctx.font='600 22px '+FONT; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('Aucun joueur', x+colW/2, rowsTop+rowH/2); return;
+      }
+      list.forEach((p,i)=>{
+        const y=rowsTop+i*rowH;
+        ctx.save(); rrect(ctx,x,y,colW,rowH-8,12); ctx.fillStyle='#f4f7fb'; ctx.fill(); ctx.restore();
+        const cy=y+(rowH-8)/2;
+        drawAvatar(ctx,p,imgs,x+28,cy,20);
+        ctx.font='700 25px '+FONT; ctx.textAlign='left'; ctx.textBaseline='middle';
+        ctx.fillStyle='#0E1636';
+        ctx.fillText(ellipsize(ctx,displayName(p),colW-64), x+56, cy+1);
+      });
+    }
+    drawCol(keep, xL);
+    drawCol(sell, xR);
+
+    ctx.strokeStyle='#e6edf4'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad,footerTop+8); ctx.lineTo(W-pad,footerTop+8); ctx.stroke();
+    ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+    ctx.fillStyle='#7a8aa0'; ctx.font='600 19px '+FONT;
+    ctx.fillText('Données : Sportmonks · Équipe de France 2026', W/2, footerTop+44);
+
+    const a=document.createElement('a');
+    a.download='equipe-de-france-2026.png';
+    a.href=cv.toDataURL('image/png');
+    document.body.appendChild(a); a.click(); a.remove();
+  }catch(e){
+    alert("Désolé, la génération de l'image a échoué.");
+  }finally{
+    btn.disabled=false; btn.textContent=old;
+  }
+}
+$('#shImg').addEventListener('click', downloadImage);
+
+/* =================================================================
+   IFRAME : auto-hauteur (optionnel côté WordPress)
+   ================================================================= */
+function postHeight(){
+  if(window.parent===window) return;
+  window.parent.postMessage({type:'mercato-fr-height', height:document.documentElement.scrollHeight}, PARENT_ORIGIN);
+}
+window.addEventListener('resize', postHeight);
+
+render();
+</script>
+</body>
+</html>
